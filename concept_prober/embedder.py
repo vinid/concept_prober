@@ -2,13 +2,13 @@ from transformers import *
 import pandas as pd
 import datasets
 from torch.utils.data import DataLoader
-
+from tqdm import tqdm
 
 class Embedder:
 
     def __init__(self, model_name, max_length, device="cuda"):
         self.model_name = model_name
-        self.model = AutoModel.from_pretrained(model_name).to(device)
+        self.model = AutoModel.from_pretrained(model_name, output_hidden_states=True).to(device)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.max_length = max_length
         self.device = device
@@ -51,10 +51,11 @@ class Embedder:
         dl = DataLoader(encoded_test, batch_size=batch_size)
 
         embs = []
+        pbar = tqdm(total=len(dl), position=0)
 
         for batch in dl:
             words_ids = batch["words_input_ids"]
-
+            pbar.update(1)
             del batch["words_input_ids"]
 
             batch = {k: v.to(self.device) for k, v in batch.items()}
@@ -79,6 +80,7 @@ class Embedder:
                 for embedded_sentence_tokens, (l_idx, r_idx) in zip(layer_features, idx):
                     embs.append(embedded_sentence_tokens[l_idx:l_idx+1, :].mean(0).detach().cpu().numpy())
 
+        pbar.close()
         return embs
 
 
