@@ -16,7 +16,7 @@ class MatchExtraction:
                 collected.append((word, line))
         return collected
 
-    def extract(self, sentences, output_folder, save_name, batch_size=10, cpus=4):
+    def extract(self, sentences, output_folder, save_name,  cpus=4):
 
         isExist = os.path.exists(output_folder)
 
@@ -28,7 +28,7 @@ class MatchExtraction:
         print("Finding Matches")
 
         with Pool(cpus) as pool:
-            matches = list(tqdm(pool.imap(self.func, sentences), total=batch_size, position=0))
+            matches = list(tqdm(pool.imap(self.func, sentences), total=len(sentences), position=0))
 
         with open(f"{output_folder}/{save_name}.tsv", "w") as filino:
             for k in matches:

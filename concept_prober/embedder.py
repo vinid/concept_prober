@@ -3,10 +3,12 @@ import pandas as pd
 import datasets
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from collections import defaultdict
+from typing import List
 
 class Embedder:
 
-    def __init__(self, model_name, max_length, device="cuda"):
+    def __init__(self, model_name:str, max_length:str, device:str="cuda"):
         self.model_name = model_name
         self.model = AutoModel.from_pretrained(model_name, output_hidden_states=True).to(device)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -22,11 +24,11 @@ class Embedder:
 
         return results
 
-    def subset_of_tokenized(self, list_of_tokens):
+    def subset_of_tokenized(self, list_of_tokens:List[int]):
         idx = list_of_tokens.index(self.tokenizer.pad_token_id)
         return list_of_tokens[0:idx]
 
-    def embed(self, target_texts, words, layer_id, batch_size, averaging=False):
+    def embed(self, target_texts : List[str], words: List[str], layers_id: List[int], batch_size:int, averaging:bool=False):
 
         words = [f" {word.strip()}" for word in words]
 
@@ -50,7 +52,7 @@ class Embedder:
 
         dl = DataLoader(encoded_test, batch_size=batch_size)
 
-        embs = []
+        embs = defaultdict(list)
         pbar = tqdm(total=len(dl), position=0)
 
         for batch in dl:
@@ -62,23 +64,23 @@ class Embedder:
 
             features = self.model(**batch)["hidden_states"]
 
-            layer_features = features[layer_id]
+            for layer in layers_id:
+                layer_features = features[layer]
 
-            try:
+                try:
+                    idx = [
+                        self.find_sub_list(self.subset_of_tokenized(tok_word.tolist()), input_ids.tolist())[0]
+                        for tok_word, input_ids in zip(words_ids, batch["input_ids"])
+                    ]
+                except IndexError as e:
+                    raise Exception("Index Error: do all the words occur in the respective sentences?")
 
-                idx = [
-                    self.find_sub_list(self.subset_of_tokenized(tok_word.tolist()), input_ids.tolist())[0]
-                    for tok_word, input_ids in zip(words_ids, batch["input_ids"])
-                ]
-            except IndexError as e:
-                raise Exception("Index Error: do all the words occur in the respective sentences?")
-
-            if averaging:
-                for embedded_sentence_tokens, (l_idx, r_idx) in zip(layer_features, idx):
-                    embs.append(embedded_sentence_tokens[l_idx:r_idx, :].mean(0).detach().cpu().numpy())
-            else:
-                for embedded_sentence_tokens, (l_idx, r_idx) in zip(layer_features, idx):
-                    embs.append(embedded_sentence_tokens[l_idx:l_idx+1, :].mean(0).detach().cpu().numpy())
+                if averaging:
+                    for embedded_sentence_tokens, (l_idx, r_idx) in zip(layer_features, idx):
+                        embs[layer].append(embedded_sentence_tokens[l_idx:r_idx, :].mean(0).detach().cpu().numpy())
+                else:
+                    for embedded_sentence_tokens, (l_idx, r_idx) in zip(layer_features, idx):
+                        embs[layer].append(embedded_sentence_tokens[l_idx:l_idx+1, :].mean(0).detach().cpu().numpy())
 
         pbar.close()
         return embs
