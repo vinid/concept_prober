@@ -1,13 +1,13 @@
 from tqdm import tqdm
 from multiprocessing import Pool
-import gc
 import os
-import shutil
+from typing import List
 
-class MatchExtraction:
 
-    def __init__(self, stimuli):
-        self.stimuli = stimuli
+class FindWordTextOccurrence:
+
+    def __init__(self):
+        self.stimuli = None
 
     def func(self, line):
         collected = []
@@ -16,21 +16,13 @@ class MatchExtraction:
                 collected.append((word, line))
         return collected
 
-    def extract(self, sentences, output_folder, save_name,  cpus=4):
-
-        isExist = os.path.exists(output_folder)
-
-        if isExist:
-            raise Exception("Folder already exists")
-        else:
-            os.makedirs(output_folder, exist_ok=False)
-
-        print("Finding Matches")
+    def extract(self, stimuli: List[str], sentences: List[str], output_location: str,  cpus=4):
+        self.stimuli = stimuli
 
         with Pool(cpus) as pool:
             matches = list(tqdm(pool.imap(self.func, sentences), total=len(sentences), position=0))
 
-        with open(f"{output_folder}/{save_name}.tsv", "w") as filino:
+        with open(f"{output_location}", "w") as filino:
             for k in matches:
                 for key, value in k:
                     filino.write(f"{key}\t{value.strip()}\n")
