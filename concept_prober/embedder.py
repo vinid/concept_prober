@@ -3,8 +3,15 @@ import pandas as pd
 import datasets
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from sklearn.preprocessing import StandardScaler
 from collections import defaultdict
 from typing import List
+from datasets import load_dataset
+from sklearn.metrics import *
+from sklearn.linear_model import LogisticRegression
+import pandas as pd
+from sklearn.metrics import classification_report
+
 
 class Embedder:
 
@@ -84,6 +91,44 @@ class Embedder:
 
         pbar.close()
         return embs
+
+
+class CosineProber:
+
+    def __init__(self):
+        pass
+
+    def class_average_classifier(self, X, y, test_X):
+        """
+        Creates an averaged representation for each class.
+        Each test example is mapped to its matching training class
+
+        X = [
+        """
+        pass
+
+
+
+class Prober:
+
+    def __init__(self):
+        self.lr = None
+        self.scaler = None
+
+    def train(self, X, y, concept_to_class):
+        y = [concept_to_class(k) for k in y]
+        self.scaler = StandardScaler()
+        X_transformed = self.scaler.fit_transform(X)
+
+        self.lr = LogisticRegression(random_state=0, n_jobs=-1, multi_class='multinomial')
+
+        self.lr.fit(X_transformed, y)
+
+    def predict_class_for_each_instance(self, X):
+        X_transformed = self.scaler.transform(X)
+        return self.lr.predict(X_transformed)
+
+
 
 
 
