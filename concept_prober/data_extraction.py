@@ -1,14 +1,14 @@
 from tqdm import tqdm
 from multiprocessing import Pool
-import os
-from sklearn.metrics import classification_report
 from typing import List
 
 
-
-
-
-
+def generate_data_from_json(json_data, label="seeds"):
+    elements_to_find = json_data[label]["words"]
+    elements2concept_dict = {k: v for k, v in
+                             zip(json_data["instances"]["words"], json_data["instances"]["concept"])}
+    element_to_concept = (lambda x: elements2concept_dict[x])
+    return elements_to_find, element_to_concept
 
 
 class FindWordTextOccurrence:
