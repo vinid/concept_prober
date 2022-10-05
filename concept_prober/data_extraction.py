@@ -7,8 +7,8 @@ from typing import List
 
 def combine_and_compute_performance(dataframe, instance_to_target):
     grouped_targets = dataframe.groupby(["word", "predictions"]).count().reset_index()
-    sorted_targets = grouped_targets.sort_values(1, ascending=False).drop_duplicates(
-        0).sort_index()  # drop "other" predictions
+    sorted_targets = grouped_targets.sort_values("sentence", ascending=False).drop_duplicates(
+        "word").sort_index()  # drop "other" predictions
     test_y = [instance_to_target(k) for k in sorted_targets["word"]]
 
     return classification_report(test_y, sorted_targets["predictions"])
