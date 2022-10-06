@@ -93,21 +93,6 @@ class Embedder:
         return embs
 
 
-class CosineProber:
-
-    def __init__(self):
-        pass
-
-    def class_average_classifier(self, X, y, test_X):
-        """
-        Creates an averaged representation for each class.
-        Each test example is mapped to its matching training class
-
-        X = [
-        """
-        pass
-
-
 
 class Prober:
 
