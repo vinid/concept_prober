@@ -2,13 +2,23 @@ import numpy as np
 from operator import itemgetter
 from sklearn.metrics import classification_report
 import pandas as pd
+import copy
 
+def combine_and_compute_performance(dataframe, instance_to_target):
+    grouped_targets = dataframe.groupby(["word", "predictions"]).count().reset_index()
+    sorted_targets = grouped_targets.sort_values("sentence", ascending=False).drop_duplicates(
+        "word").sort_index()  # drop "other" predictions
+    test_y = [instance_to_target(k) for k in sorted_targets["word"]]
+
+    return classification_report(test_y, sorted_targets["predictions"])
 
 def cosine_all_average(seed_embeddings, instance_embeddings,
                        seed_dataframe: pd.DataFrame, instance_dataframe: pd.DataFrame,
-                       instance_to_concept, layer_num=12):
+                       instance_to_concept, seed_to_concept, layer_num=12):
 
     aggregated_seed_embeddings = {}
+    seed_dataframe = copy.copy(seed_dataframe)
+    seed_dataframe["word"] = seed_dataframe["word"].apply(seed_to_concept)
 
     for word in seed_dataframe["word"].unique().tolist():
         subset_of_ids = seed_dataframe[seed_dataframe["word"] == word].index.tolist()
@@ -41,8 +51,11 @@ def cosine_all_average(seed_embeddings, instance_embeddings,
 
 def cosine_baseline_average_concepts(seed_embeddings, instance_embeddings,
                                      seed_dataframe,
-                                     instance_dataframe, instance_to_concept, layer_num=12):
+                                     instance_dataframe, instance_to_concept, seed_to_concept, layer_num=12):
     aggregated_seed_embeddings = {}
+
+    seed_dataframe = copy.copy(seed_dataframe)
+    seed_dataframe["word"] = seed_dataframe["word"].apply(seed_to_concept)
 
     for word in seed_dataframe["word"].unique().tolist():
         subset_of_ids = seed_dataframe[seed_dataframe["word"] == word].index.tolist()
@@ -62,7 +75,11 @@ def cosine_baseline_average_concepts(seed_embeddings, instance_embeddings,
 
 def cosine_baseline_no_averages(seed_embeddings,
                                 instance_embeddings, seed_dataframe, instance_dataframe,
-                                instance_to_concept, layer_num=12):
+                                instance_to_concept, seed_to_concept, layer_num=12):
+
+    seed_dataframe = copy.copy(seed_dataframe)
+    seed_dataframe["word"] = seed_dataframe["word"].apply(seed_to_concept)
+
     pres = np.argmax((np.array(instance_embeddings[layer_num]) @ np.array(seed_embeddings[layer_num]).T), axis=1)
 
     instance_dataframe["cosine_predictions"] = seed_dataframe.iloc[pres]["word"].values
