@@ -113,6 +113,10 @@ class Prober:
         X_transformed = self.scaler.transform(X)
         return self.lr.predict(X_transformed)
 
+    def predict_class_for_each_instance_proba(self, X):
+        X_transformed = self.scaler.transform(X)
+        return self.lr.predict_proba(X_transformed)
+
 
 
 
